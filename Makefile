@@ -1,11 +1,31 @@
 GMAN ?= gman
 PYTHON ?= python3
+CMAKE ?= cmake
+GMAN_PREFIX ?=
 
-ASSETS = build/marble.tif build/cactus.tif build/cactus.rib
+SHADER_DIR = $(CURDIR)/build/cmake
+GMAN_RENDER = DYLD_LIBRARY_PATH=$(SHADER_DIR) LD_LIBRARY_PATH=$(SHADER_DIR) $(GMAN)
+PREFIX_ARG = $(if $(GMAN_PREFIX),-DCMAKE_PREFIX_PATH=$(GMAN_PREFIX))
 
-.PHONY: assets preview hq
+ASSETS = build/marble.tif build/cactus.tif build/cactus.rib build/foil.tif
+
+.PHONY: assets foil shader check preview hq
 
 assets: $(ASSETS)
+
+foil: build/foil.tif
+
+shader:
+	$(CMAKE) -S . -B build/cmake $(PREFIX_ARG)
+	$(CMAKE) --build build/cmake --parallel
+
+build/foil.tif: gen/foil.py
+	mkdir -p build
+	$(PYTHON) gen/foil.py $@
+
+check: shader foil
+	ctest --test-dir build/cmake --output-on-failure
+	$(PYTHON) tests/gildedcheck.py --gman '$(GMAN)' --shader-dir '$(SHADER_DIR)' --foil build/foil.tif
 
 build/marble.tif: gen/marble.py
 	mkdir -p build
@@ -21,8 +41,8 @@ build/still-life-hq.rib: still-life.rib
 	mkdir -p build
 	sed -e 's/^Format .*/Format 1920 1200 1/' -e 's/"integer samples" \[64\]/"integer samples" [512]/' -e 's/still-life\.png/still-life-hq.png/' $< > $@
 
-preview: $(ASSETS)
-	$(GMAN) -r gmanpathtracer still-life.rib
+preview: $(ASSETS) shader foil
+	$(GMAN_RENDER) -r gmanpathtracer still-life.rib
 
-hq: $(ASSETS) build/still-life-hq.rib
-	$(GMAN) -r gmanpathtracer build/still-life-hq.rib
+hq: $(ASSETS) shader foil build/still-life-hq.rib
+	$(GMAN_RENDER) -r gmanpathtracer build/still-life-hq.rib

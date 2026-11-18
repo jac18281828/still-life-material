@@ -66,7 +66,9 @@ Once `shaders/` exists, also:
 
 ```sh
 cmake -S . -B build/cmake -DCMAKE_PREFIX_PATH="${GMAN_PREFIX}" && cmake --build build/cmake --parallel
-clang-format --dry-run --Werror shaders/*.cpp
+ctest --test-dir build/cmake --output-on-failure
+clang-format --dry-run --Werror shaders/*.cpp shaders/*.h tests/*.cpp
+make check GMAN="${GMAN_PREFIX}/bin/gman"
 ```
 
 A render that writes no image, or an image with a NaN or all-black frame, fails the gate. If a gate

@@ -58,9 +58,11 @@ AttributeBegin
 	Disk 0.6 0.42 360
 AttributeEnd
 AttributeBegin
-	Surface "shinymetal" "roughness" [0.05]
-	Color [0.9 0.72 0.36]
+	Surface "gilded" "roughness" [0.06] "texturename" ["build/foil.tif"] "float bump" [6]
+	Color [0.95 0.76 0.48]
 	Translate -1.4 0 0.75
+	Rotate -90 0 1 0
+	Rotate -90 1 0 0
 	Sphere 0.4 -0.4 0.4 360
 AttributeEnd
 AttributeBegin

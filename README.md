@@ -14,20 +14,24 @@ white tuft of glochids and a straw spine or two, and three pink buds.
 
 ## What you need
 
-- **gman 1.2 or later** on your `PATH`. Download a release tarball from
-  [gman's releases](https://github.com/jac18281828/gman/releases), or
-  [build it from source](https://github.com/jac18281828/gman#build-from-source).
+- **gman**, installed, with its shader helpers (`<gman/gmanshaderparams.h>` and the surface tangents
+  `dPdu` and `dPdv`). No release holds them yet, so build gman from `main`
+  ([build it from source](https://github.com/jac18281828/gman#build-from-source)) and install it
+  into a prefix with `cmake --install`. Pass that prefix as `GMAN_PREFIX` and its `bin/gman` as
+  `GMAN`.
+- **CMake 3.21 or later** and a C++20 compiler, which build the gilded shader.
 - **Python 3** with `numpy` and `Pillow`: `pip install numpy Pillow`.
 - **make**.
 
 ## Render it
 
 ```sh
-make preview
+make preview GMAN_PREFIX=/path/to/gman-prefix GMAN=/path/to/gman-prefix/bin/gman
 ```
 
-That writes the textures and the cactus under `build/`, then renders `still-life.png` at 640 by 400
-with 64 paths through each of four subpixels. It takes about 20 seconds on an Apple M3 Max.
+That writes the textures and the cactus under `build/`, builds the gilded shader that finishes the
+gold ball, then renders `still-life.png` at 640 by 400 with 64 paths through each of four subpixels.
+It takes about 20 seconds on an Apple M3 Max.
 
 ## Render it at high quality
 
@@ -49,8 +53,8 @@ Option "pathtracer" "integer samples" [64]
 
 `Format` sets the size in pixels. `integer samples` sets the paths traced through each subpixel;
 `PixelSamples 2 2` makes four subpixels a pixel. Noise falls with the square root of the paths, so
-four times the samples halves the grain. Point `make` at a gman outside your `PATH` with
-`make hq GMAN=/path/to/gman`.
+four times the samples halves the grain. `make hq` and `make check` take the same `GMAN_PREFIX` and
+`GMAN`; `make check` renders small test scenes and verifies the shader.
 
 ## What is in it
 
@@ -58,6 +62,8 @@ four times the samples halves the grain. Point `make` at a gman outside your `PA
 |---|---|
 | `still-life.rib` | The scene: camera, lights, floor, wall and the four objects |
 | `gen/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard of cream and slate marble |
+| `gen/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball |
+| `shaders/gmangilded.cpp` | `libgilded.so`, the shader that turns the foil into gold leaf |
 | `gen/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, and `build/cactus.rib`, the cactus |
 | `images/still-life.png` | The picture above |
 
