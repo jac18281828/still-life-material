@@ -63,5 +63,7 @@ four times the samples halves the grain. Point `make` at a gman outside your `PA
 
 ## Licence
 
-The scene, the scripts and the picture are licensed under
-[Creative Commons Attribution 4.0](LICENSE). gman itself is LGPL-2.1-or-later.
+The code is under the [MIT licence](LICENSE): the scripts under `gen/`, the `Makefile` and any
+shader this repository builds. The scene, `still-life.rib`, and the pictures under `images/` are
+under [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0). gman itself is LGPL-2.1-or-later; a
+shader here links it as a plugin, and its own code stays MIT.
