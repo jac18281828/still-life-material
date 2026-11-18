@@ -1,6 +1,6 @@
 # Still life with cactus
 
-![A path-traced still life: a gold ball on a pedestal, a glass ball, a potted prickly pear, a mirror ball and a blue torus on a marble floor before a red clay wall](images/still-life.png)
+![A path-traced still life: a gold-leaf ball on a pedestal, a glass ball, a potted prickly pear, a mirror ball and a blue torus on a marble floor before a red clay wall](images/still-life.png)
 
 A still life path-traced with [gman](https://github.com/jac18281828/gman), a RenderMan-compatible
 renderer. A gold ball sits on a pedestal; a glass ball in front turns the potted prickly pear behind
@@ -41,7 +41,7 @@ make hq
 
 That renders `still-life-hq.png` at 1920 by 1200 with 512 paths a subpixel, 2,048 a pixel, which
 smooths the grain on the floor and in the metal. Expect about 25 minutes on an Apple M3 Max. The
-picture above is the same scene at 1280 by 800 with the same sampling.
+picture above is that render, scaled to 1280 by 800.
 
 Two lines at the top of `still-life.rib` set the quality, and `make hq` rewrites both into
 `build/still-life-hq.rib`:
