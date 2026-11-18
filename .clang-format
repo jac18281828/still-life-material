@@ -1,0 +1,33 @@
+---
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# LLVM-based style at 120 columns. The whole tree is formatted to this file
+# by clang-format 22.1.8. `format-check` (CMakeLists.txt) checks every
+# `.c`, `.cpp` and `.h` under the eight source directories on every push.
+# Includes sort by the categories below.
+Language: Cpp
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 120
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlignEscapedNewlines: Left
+BreakStringLiterals: false
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # 1. C++ standard library: angle brackets, no extension.
+  - Regex: '^<[a-z_]+>$'
+    Priority: 1
+  # 3. Libraries, matched ahead of the general system category below.
+  - Regex: '^<(tiffio|png|jpeglib|zlib)\.h>$'
+    Priority: 3
+  # 2. System: every other angle-bracket header.
+  - Regex: '^<.*>$'
+    Priority: 2
+  # 4. gman: every quoted include.
+  - Regex: '^".*"$'
+    Priority: 4
+# No include is ever the main include: a project header never outranks the
+# standard library, and a source file's own header sorts with its group.
+IncludeIsMainRegex: '$^'
