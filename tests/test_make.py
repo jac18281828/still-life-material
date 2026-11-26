@@ -95,6 +95,19 @@ class Stamp(Work):
         self.assets()
         self.assertEqual(set(self.built_at().values()), {"1"})
 
+    def test_an_unknown_shot_builds_nothing(self):
+        shutil.rmtree(self.work / "build", ignore_errors=True)
+        for args in (("shot=nope",), ()):
+            result = subprocess.run(
+                ["make", "-s", "render", f"PYTHON={self.work / 'stub.sh'}", *args],
+                cwd=self.work,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("usage: make shot=", result.stdout)
+            self.assertFalse((self.work / "build").exists())
+
     def test_the_same_scale_builds_nothing(self):
         self.assets("TEXSCALE=2")
         log = (self.work / "stub.log").read_text()

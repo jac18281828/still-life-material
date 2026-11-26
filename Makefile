@@ -26,8 +26,9 @@ TEXSCALE := $(TEXSCALE)
 ASSETS = build/marble.tif build/marblenormal.tif build/cactus.tif build/cactusnormal.tif build/cactus.rib build/foil.tif build/foilnormal.tif
 
 .PHONY: assets shader render all check clean texscale FORCE
-render: assets shader
-	@test -n "$(shot)" || { echo "usage: make shot=<$(SHOTS)>"; exit 1; }
+render:
+	@test -f "shots/$(shot)/shot.rib" || { echo "usage: make shot=<$(SHOTS)>"; exit 1; }
+	@$(MAKE) --no-print-directory assets shader
 	GMAN=$(GMAN) tools/render.sh $(shot) $(RENDERER) $(FORMAT)
 
 assets: $(ASSETS)
