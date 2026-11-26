@@ -30,9 +30,9 @@ and how to render.
 - `shots/<shot>/shot.rib` — camera, format, samples and what the shot reads; it has no `Display`.
 - `tools/` — `render.sh` and the generators `make` runs; nothing they write is committed. A script
   takes its inputs and outputs as arguments and writes only where told. A texture generator also
-  takes a trailing `scale` that multiplies every side; `make` passes `TEXSCALE`, one more for each
-  1920 pixels of a shot's `Format` width, and a changed scale rebuilds the textures. Scale 1 writes
-  the same bytes as ever, and a new generator keeps its relief the same at any scale.
+  takes a trailing `scale` that multiplies every side; `make` passes `TEXSCALE`, which is
+  `ceil(width / 1920)` for a shot's `Format` width, and a changed scale rebuilds the textures.
+  Scale 1 writes the same bytes as ever, and a new generator keeps its relief the same at any scale.
 - `shaders/` — shader plugins, each a `MODULE` library linking `gman::gman_core`, named
   `lib<name>.so` so `Surface "<name>"` loads it.
 - `tests/` — `unittest` suites, the C++ unit test and the scenes the suites render.

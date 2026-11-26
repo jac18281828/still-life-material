@@ -10,7 +10,7 @@
 #   GMAN_PREFIX=/prefix make shader        override the prefix CMake searches
 #   FORMAT=exr make shot=preview           png by default; needs that driver in gman
 #   TEXSCALE=2 make assets                 textures 2 times a side; make shot=<shot> sets it from the
-#                                          shot's Format width, one more for each 1920 pixels
+#                                          shot's Format width: ceil(width / 1920)
 #   RENDERER=gmanraytracer make shot=preview   gmanpathtracer by default
 GMAN ?= gman
 RENDERER ?= gmanpathtracer
@@ -21,6 +21,7 @@ GMAN_PATH := $(shell command -v $(GMAN))
 GMAN_PREFIX ?= $(abspath $(dir $(GMAN_PATH))..)
 SHOTS := $(notdir $(wildcard shots/*))
 TEXSCALE ?= $(if $(shot),$(or $(shell awk '$$1 == "Format" { print int(($$2 + 1919) / 1920); exit }' shots/$(shot)/shot.rib 2>/dev/null),1),1)
+TEXSCALE := $(TEXSCALE)
 
 ASSETS = build/marble.tif build/marblenormal.tif build/cactus.tif build/cactusnormal.tif build/cactus.rib build/foil.tif build/foilnormal.tif
 
@@ -38,7 +39,7 @@ FORCE:
 
 build/texscale: FORCE
 	@mkdir -p build
-	@echo $(TEXSCALE) | cmp -s - $@ || { rm -f $(ASSETS); echo $(TEXSCALE) > $@; }
+	@echo $(TEXSCALE) | cmp -s - $@ || { rm -f $(ASSETS); sleep 1; echo $(TEXSCALE) > $@; }
 
 shader:
 	$(CMAKE) -S . -B build/cmake -DCMAKE_PREFIX_PATH=$(GMAN_PREFIX)

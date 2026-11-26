@@ -9,8 +9,8 @@ from tiff16 import write_tiff16
 rng=np.random.default_rng(7)
 SCALE=int(sys.argv[3]) if len(sys.argv)>3 else 1
 if SCALE<1: sys.exit('scale must be a positive integer')
-NORMAL_SCALE=min(SCALE,2)
-N=2048*NORMAL_SCALE
+SCALE=min(SCALE,2)
+N=2048*SCALE
 def vnoise(n, cells):
     g=rng.random((cells+1,cells+1))
     x=np.linspace(0,cells,n,endpoint=False); xi=x.astype(int); xf=x-xi
@@ -45,8 +45,8 @@ img=np.where(grout,np.array([0.42,0.4,0.37]),img)
 Image.fromarray((np.clip(img,0,1)*255+0.5).astype(np.uint8)).save(sys.argv[1])
 
 del img,L,D,light,ln,dark,dn,chk,grout,ti,tj,fx,fy,yy,xx
-NORMAL_N=4096*NORMAL_SCALE
-GROUT_DEPTH=5*NORMAL_SCALE
+NORMAL_N=4096*SCALE
+GROUT_DEPTH=5*SCALE
 BEVEL=0.03
 TILE_TILT=0.05
 nrng=np.random.default_rng(31)

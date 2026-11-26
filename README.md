@@ -66,8 +66,8 @@ relief keeps its height. `preview` and `hq` stay at scale 1, whose textures are 
 the ones before this rule. `TEXSCALE=<n> make assets` sets the scale by hand. A change of scale
 discards the textures and builds them again, so `preview` after a wider shot rebuilds at scale 1.
 
-The marble stops at scale 2: its normal map is already 4096 by 4096 and 8192 by 8192 at scale 2,
-about 400 MB and 16 GB of memory to build. The foil, the cactus and the marble's colour grow
+The marble stops at scale 2, for both its maps: its normal map is 8192 by 8192 there, a 400 MB file
+that takes about 16 GB of memory to build, against 4 GB at scale 1. The foil and the cactus grow
 without that limit.
 
 ## Check it

@@ -11,7 +11,8 @@ if SCALE<1: sys.exit('scale must be a positive integer')
 AR=0.0055*0.75
 rng=np.random.default_rng(11)
 # ---- pad skin ----
-N=512*SCALE
+SKIN=512
+N=SKIN*SCALE
 def vnoise(n, cx, cy, source=rng, wrap=False):
     g=source.random((cy+1,cx+1))
     if wrap: g[:,cx]=g[:,0]
@@ -43,7 +44,7 @@ def relief(n, cx, cy): return vnoise(n, cx, cy, nrng, True)
 height=0.45*relief(NORMAL_N,8,4)+0.3*relief(NORMAL_N,32,16)+0.15*relief(NORMAL_N,96,48)+0.1*relief(NORMAL_N,240,120)
 hx=(np.roll(height,-1,1)-np.roll(height,1,1))*0.5
 hy=(np.roll(height,-1,0)-np.roll(height,1,0))*0.5
-nx,ny,nz=-hx*NORMAL_STRENGTH*NORMAL_N/512,hy*NORMAL_STRENGTH*NORMAL_N/512,np.ones_like(hx)
+nx,ny,nz=-hx*NORMAL_STRENGTH*NORMAL_N/SKIN,hy*NORMAL_STRENGTH*NORMAL_N/SKIN,np.ones_like(hx)
 length=np.sqrt(nx*nx+ny*ny+nz*nz)
 write_tiff16(out_normal, np.stack([nx,ny,nz],-1)/length[...,None]*0.5+0.5)
 # ---- pads, areoles, spines ----
