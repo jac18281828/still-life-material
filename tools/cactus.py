@@ -1,4 +1,5 @@
-import numpy as np, struct, sys, math
+import numpy as np, os, struct, sys, math
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tiff16 import write_tiff16
 out_tif, out_rib, tex_name = sys.argv[1], sys.argv[2], sys.argv[3]
 AR=0.0055*0.75

@@ -1,4 +1,3 @@
-Display "build/check/gildednormal.png" "file" "rgba"
 Format 160 100 1
 PixelSamples 1 1
 Option "pathtracer" "integer samples" [16]

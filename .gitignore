@@ -1,4 +1,4 @@
-/build/
-/still-life.png
-/still-life-hq.png
+build/
+renders/
 __pycache__/
+.DS_Store

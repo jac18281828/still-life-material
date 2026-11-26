@@ -1,0 +1,7 @@
+## Marble floor: a checkerboard of cream and slate marble, generated into build/ by tools/marble.py.
+AttributeBegin
+	Attribute "identifier" "name" ["floor"]
+	Surface "paintedplastic" "Kd" [0.9] "Ks" [0.25] "roughness" [0.04] "texturename" ["build/marble.tif"]
+	Color [1 1 1]
+	Polygon "P" [-4 -1 -5  4 -1 -5  4 -1 3  -4 -1 3] "st" [0 0  1 0  1 1  0 1]
+AttributeEnd

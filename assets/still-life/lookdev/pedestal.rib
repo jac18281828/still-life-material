@@ -1,0 +1,10 @@
+## Pedestal under the gold ball.
+AttributeBegin
+	Attribute "identifier" "name" ["pedestal"]
+	Surface "matte"
+	Color [0.5 0.46 0.42]
+	Translate -1.4 -1 0.75
+	Rotate -90 1 0 0
+	Cylinder 0.42 0 0.6 360
+	Disk 0.6 0.42 360
+AttributeEnd

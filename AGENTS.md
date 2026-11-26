@@ -1,8 +1,10 @@
 # AGENTS.md
 
 A path-traced still life rendered with [gman](https://github.com/jac18281828/gman): the scene, the
-generators that write its textures and cactus, and any shader it needs, built against an installed
-gman. POSIX only: macOS and Linux.
+tools that write its textures and cactus, and the shader it needs, built against an installed gman.
+The RIB files under `assets/`, `lights/` and `shots/` are the masters; everything generated goes to
+`build/` or `renders/`. POSIX only: macOS and Linux. `README.md` holds the layout, the conventions
+and how to render.
 
 ## Project facts
 
@@ -10,30 +12,39 @@ gman. POSIX only: macOS and Linux.
   Prompts live in `${STILL_LIFE_ROOT}/prompts/`, executor reports in `${STILL_LIFE_ROOT}/reports/`.
 - **Agenda:** `~/OneDrive/Documents/org/gman.org`, under `* gman — shading, lights and radiosity`.
   The orchestrator owns it; an executor edits no agenda.
-- **Machine:** the owner's workstation.
-- **gman:** found through `find_package(gman CONFIG REQUIRED)` with `CMAKE_PREFIX_PATH` pointing at
-  an install prefix. A unit that needs gman features newer than its latest release installs gman's
-  `main` into a prefix of its own and names the commit it built.
-- **Python:** `python3` with `numpy` and `Pillow`; scripts take their inputs and outputs as
-  arguments and write only under `build/`.
+- **Machine:** the owner's workstation, where gman and a CPU for path-traced renders live.
+- **gman:** `gman` on `PATH`, release 1.3.1 or later; `GMAN=<path>` overrides it. The Makefile takes
+  the install prefix from the binary's location, as `GMAN_PREFIX=<prefix>` overrides, and finds
+  gman's headers and `find_package(gman CONFIG REQUIRED)` there. `tools/render.sh` refuses an older
+  gman. `FORMAT=exr` needs a gman whose `--version` lists the `exr` driver. A unit that needs
+  features newer than the latest release installs gman's `main` into a prefix of its own and names
+  the commit it built.
+- **Python:** `python3` with `numpy` and `Pillow`, always run with `-I`; no other dependency.
 
 ## Layout
 
-- `still-life.rib` — the scene; it reads every generated file from `build/`.
-- `gen/` — generators run by `make`; nothing they write is committed.
+- `assets/still-life/still-life.rib` — the scene's entry; it reads every part's
+  `lookdev/<part>.rib`, each a material with its geometry. `lookdev/pot.rib` and the textures read
+  generated files from `build/`.
+- `lights/studio.rib` — the light rig.
+- `shots/<shot>/shot.rib` — camera, format, samples and what the shot reads; it has no `Display`.
+- `tools/` — `render.sh` and the generators `make` runs; nothing they write is committed. A script
+  takes its inputs and outputs as arguments and writes only where told.
 - `shaders/` — shader plugins, each a `MODULE` library linking `gman::gman_core`, named
   `lib<name>.so` so `Surface "<name>"` loads it.
-- `images/` — committed renders for the README.
+- `tests/` — `unittest` suites, the C++ unit test and the scenes the suites render.
+- `images/` — committed renders for the README. `build/` and `renders/` are generated and not
+  tracked.
 
 `gman` loads a shader by its bare file name, so a render points the loader at the build's shader
-directory: `DYLD_LIBRARY_PATH` on macOS, `LD_LIBRARY_PATH` on Linux. A `Makefile` target that renders
-with a shader of this repository sets both on its `gman` command.
+directory: `DYLD_LIBRARY_PATH` on macOS, `LD_LIBRARY_PATH` on Linux. `tools/render.sh` sets both on
+its `gman` command.
 
 ## Licences
 
-Code is MIT (`LICENSE`): `gen/`, `shaders/`, the `Makefile` and any CMake files. The scene and the
-pictures are Creative Commons Attribution 4.0 (`LICENSE-CC-BY-4.0`). A new code file carries
-`SPDX-License-Identifier: MIT`.
+Code is MIT (`LICENSE`): `tools/`, `shaders/`, `tests/`, the `Makefile` and any CMake files. The
+scene (`assets/`, `lights/`, `shots/`) and the pictures are Creative Commons Attribution 4.0
+(`LICENSE-CC-BY-4.0`). A new code file carries `SPDX-License-Identifier: MIT`.
 
 ## Workflow
 
@@ -53,23 +64,27 @@ returns, no code comments beyond API docs. Shader classes live in `namespace gma
 their `Surface` token as their name. Format with clang-format 22.1.8 against a `.clang-format`
 copied verbatim from gman.
 
+## Python
+
+- A module docstring or a header comment says what the script does and how to call it. No other
+  comments.
+- Tests use the standard library's `unittest`, never pytest. They live in `tests/test_*.py` and read
+  only files in the tree, or files they wrote to a temporary directory. A suite that renders skips
+  itself until `make shader assets` has built what it needs.
+
 ## Completion gates
 
-Before marking work complete, run and report:
+Run from the repository root; every gate passes before work is complete:
 
 ```sh
-make assets
-make preview
-```
-
-Once `shaders/` exists, also:
-
-```sh
-cmake -S . -B build/cmake -DCMAKE_PREFIX_PATH="${GMAN_PREFIX}" && cmake --build build/cmake --parallel
-ctest --test-dir build/cmake --output-on-failure
+make check
 clang-format --dry-run --Werror shaders/*.cpp shaders/*.h tests/*.cpp
-make check GMAN="${GMAN_PREFIX}/bin/gman"
+make shot=preview
+git status --porcelain -- assets lights shots
 ```
 
-A render that writes no image, or an image with a NaN or all-black frame, fails the gate. If a gate
+`make check` builds the shader and the assets, then runs ctest and `python3 -I -m unittest discover
+-s tests -v`. The last command prints nothing: no build or render writes a master. A change to the
+scene, a shader or the render path also renders `make shot=hq`, 25 minutes on an Apple M3 Max. A
+render that writes no image, or an image with a NaN or all-black frame, fails the gate. If a gate
 stays red after a genuine fix attempt, stop and report the error.

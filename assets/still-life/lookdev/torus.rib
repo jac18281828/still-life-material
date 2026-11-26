@@ -1,0 +1,9 @@
+## Blue plastic torus.
+AttributeBegin
+	Attribute "identifier" "name" ["torus"]
+	Surface "plastic" "roughness" [0.1]
+	Color [0.12 0.3 0.75]
+	Translate 1.42 -0.6 -0.5
+	Rotate 38 0 1 0
+	Torus 0.3 0.1 0 360 360
+AttributeEnd

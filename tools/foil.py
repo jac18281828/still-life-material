@@ -2,8 +2,9 @@
 # Gold-leaf texture for the gilded shader: crinkled, mottled foil with sparse cracks to a red
 # bole, 2048 by 1024, s around the sphere and t pole to pole, and its 16-bit tangent-space normal
 # map: the same crinkle and cracks plus sharp creases, so the foil has edges. Usage: foil.py <foil.tif> <normal.tif>
-import numpy as np, sys
+import numpy as np, os, sys
 from PIL import Image
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tiff16 import write_tiff16
 rng=np.random.default_rng(5)
 W,H=2048,1024

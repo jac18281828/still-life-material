@@ -1,0 +1,15 @@
+## Studio rig: a warm disk light overhead and a small blue sphere lamp. Area lights glow only under
+## the path tracer.
+AttributeBegin
+	AreaLightSource "arealight" 1 "intensity" [22] "lightcolor" [1 0.92 0.8]
+	Translate -2.2 2.6 -1.2
+	Rotate -40 1 0 0
+	Rotate 35 0 0 1
+	Rotate -90 1 0 0
+	Disk 0 1.2 360
+AttributeEnd
+AttributeBegin
+	AreaLightSource "arealight" 2 "intensity" [70] "lightcolor" [0.6 0.75 1]
+	Translate 2.8 1.2 -1.5
+	Sphere 0.15 -0.15 0.15 360
+AttributeEnd

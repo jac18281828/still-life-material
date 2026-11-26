@@ -1,51 +1,60 @@
+# Still life render project. Run every target from this directory: texture paths in the RIBs are
+# relative to it.
+#   make assets           write the textures and the cactus under build/
+#   make shader           build the gilded shader into build/cmake
+#   make shot=preview     render shots/preview into the next renders/preview/preview_vNNN.png
+#   make shot=hq          the same at 1920 by 1200 with 512 paths a subpixel
+#   make all              render every shot
+#   make check            build, then run the C++ unit test and the unittest suites
+#   GMAN=/path/to/gman make shot=preview   gman on PATH by default; its prefix finds the headers
+#   GMAN_PREFIX=/prefix make shader        override the prefix CMake searches
+#   FORMAT=exr make shot=preview           png by default; needs that driver in gman
+#   RENDERER=gmanraytracer make shot=preview   gmanpathtracer by default
 GMAN ?= gman
-PYTHON ?= python3
+RENDERER ?= gmanpathtracer
+FORMAT ?= png
+PYTHON ?= python3 -I
 CMAKE ?= cmake
-GMAN_PREFIX ?=
-
-SHADER_DIR = $(CURDIR)/build/cmake
-GMAN_RENDER = DYLD_LIBRARY_PATH=$(SHADER_DIR) LD_LIBRARY_PATH=$(SHADER_DIR) $(GMAN)
-PREFIX_ARG = $(if $(GMAN_PREFIX),-DCMAKE_PREFIX_PATH=$(GMAN_PREFIX))
+GMAN_PATH := $(shell command -v $(GMAN))
+GMAN_PREFIX ?= $(abspath $(dir $(GMAN_PATH))..)
+SHOTS := $(notdir $(wildcard shots/*))
 
 ASSETS = build/marble.tif build/cactus.tif build/cactus.rib build/foil.tif build/foilnormal.tif
 
-.PHONY: assets foil shader check preview hq
+.PHONY: assets shader render all check clean
+render: assets shader
+	@test -n "$(shot)" || { echo "usage: make shot=<$(SHOTS)>"; exit 1; }
+	GMAN=$(GMAN) tools/render.sh $(shot) $(RENDERER) $(FORMAT)
 
 assets: $(ASSETS)
 
-foil: build/foil.tif build/foilnormal.tif
-
 shader:
-	$(CMAKE) -S . -B build/cmake $(PREFIX_ARG)
+	$(CMAKE) -S . -B build/cmake -DCMAKE_PREFIX_PATH=$(GMAN_PREFIX)
 	$(CMAKE) --build build/cmake --parallel
 
-build/foil.tif: gen/foil.py gen/tiff16.py
+build/foil.tif: tools/foil.py tools/tiff16.py
 	mkdir -p build
-	$(PYTHON) gen/foil.py $@ build/foilnormal.tif
+	$(PYTHON) tools/foil.py $@ build/foilnormal.tif
 
 build/foilnormal.tif: build/foil.tif
-	@test -f $@ || $(PYTHON) gen/foil.py build/foil.tif $@
+	@test -f $@ || $(PYTHON) tools/foil.py build/foil.tif $@
 
-check: shader foil
-	ctest --test-dir build/cmake --output-on-failure
-	$(PYTHON) tests/gildedcheck.py --gman '$(GMAN)' --shader-dir '$(SHADER_DIR)' --foil build/foil.tif --normal build/foilnormal.tif
-
-build/marble.tif: gen/marble.py
+build/marble.tif: tools/marble.py
 	mkdir -p build
-	$(PYTHON) gen/marble.py $@
+	$(PYTHON) tools/marble.py $@
 
-build/cactus.rib: gen/cactus.py gen/tiff16.py
+build/cactus.rib: tools/cactus.py tools/tiff16.py
 	mkdir -p build
-	$(PYTHON) gen/cactus.py build/cactus.tif $@ build/cactus.tif
+	$(PYTHON) tools/cactus.py build/cactus.tif $@ build/cactus.tif
 
 build/cactus.tif: build/cactus.rib
 
-build/still-life-hq.rib: still-life.rib
-	mkdir -p build
-	sed -e 's/^Format .*/Format 1920 1200 1/' -e 's/"integer samples" \[64\]/"integer samples" [512]/' -e 's/still-life\.png/still-life-hq.png/' $< > $@
+all: assets shader
+	@for s in $(SHOTS); do GMAN=$(GMAN) tools/render.sh $$s $(RENDERER) $(FORMAT) || exit 1; done
 
-preview: $(ASSETS) shader foil
-	$(GMAN_RENDER) -r gmanpathtracer still-life.rib
+check: shader assets
+	ctest --test-dir build/cmake --output-on-failure
+	GMAN=$(GMAN) $(PYTHON) -m unittest discover -s tests -v
 
-hq: $(ASSETS) shader foil build/still-life-hq.rib
-	$(GMAN_RENDER) -r gmanpathtracer build/still-life-hq.rib
+clean:
+	rm -rf build

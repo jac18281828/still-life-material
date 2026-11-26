@@ -1,0 +1,10 @@
+## Gold-leaf ball: the gilded shader reads build/foil.tif for colour and build/foilnormal.tif for relief.
+AttributeBegin
+	Attribute "identifier" "name" ["gold"]
+	Surface "gilded" "roughness" [0.06] "texturename" ["build/foil.tif"] "string normalname" ["build/foilnormal.tif"]
+	Color [0.95 0.76 0.48]
+	Translate -1.4 0 0.75
+	Rotate -90 0 1 0
+	Rotate -90 1 0 0
+	Sphere 0.4 -0.4 0.4 360
+AttributeEnd

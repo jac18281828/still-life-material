@@ -1,0 +1,7 @@
+## Mirror ball.
+AttributeBegin
+	Attribute "identifier" "name" ["mirror"]
+	Surface "mirror" "Kr" [1]
+	Translate 1.0 -0.7 0.3
+	Sphere 0.3 -0.3 0.3 360
+AttributeEnd

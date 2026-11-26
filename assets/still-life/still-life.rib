@@ -1,0 +1,10 @@
+## The still life: every part with its look. Texture paths are relative to the project root. A shot
+## that wants a subset reads lookdev/<part>.rib files directly.
+ReadArchive "lookdev/floor.rib"
+ReadArchive "lookdev/wall.rib"
+ReadArchive "lookdev/pedestal.rib"
+ReadArchive "lookdev/gold.rib"
+ReadArchive "lookdev/glass.rib"
+ReadArchive "lookdev/mirror.rib"
+ReadArchive "lookdev/torus.rib"
+ReadArchive "lookdev/pot.rib"

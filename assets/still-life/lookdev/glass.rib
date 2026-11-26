@@ -1,0 +1,7 @@
+## Glass ball: lenses the cactus behind it.
+AttributeBegin
+	Attribute "identifier" "name" ["glass"]
+	Surface "glass"
+	Translate -0.08 -0.5 -0.55
+	Sphere 0.5 -0.5 0.5 360
+AttributeEnd

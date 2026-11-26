@@ -14,63 +14,87 @@ white tuft of glochids and a straw spine or two, and three pink buds.
 
 ## What you need
 
-- **gman**, installed, with its shader helpers (`<gman/gmanshaderparams.h>` and the surface tangents
-  `dPdu` and `dPdv`). No release holds them yet, so build gman from `main`
-  ([build it from source](https://github.com/jac18281828/gman#build-from-source)) and install it
-  into a prefix with `cmake --install`. Pass that prefix as `GMAN_PREFIX` and its `bin/gman` as
-  `GMAN`.
+- **gman 1.3.1 or later**, installed with its headers and on your `PATH`: the
+  [release archive](https://github.com/jac18281828/gman/releases) installs it. The Makefile takes
+  the install prefix from the `gman` it finds, so nothing else needs configuring. A different
+  gman is `GMAN=/path/to/gman`, and a different prefix is `GMAN_PREFIX=/prefix`.
 - **CMake 3.21 or later** and a C++20 compiler, which build the gilded shader.
 - **Python 3** with `numpy` and `Pillow`: `pip install numpy Pillow`.
 - **make**.
 
 ## Render it
 
-```sh
-make preview GMAN_PREFIX=/path/to/gman-prefix GMAN=/path/to/gman-prefix/bin/gman
-```
-
-That writes the textures and the cactus under `build/`, builds the gilded shader that finishes the
-gold ball, then renders `still-life.png` at 640 by 400 with 64 paths through each of four subpixels.
-It takes about 20 seconds on an Apple M3 Max.
-
-## Render it at high quality
+Run every command from this directory: the RIBs name textures relative to it.
 
 ```sh
-make hq
+make shot=preview                 # next renders/preview/preview_vNNN.png
+make shot=hq                      # next renders/hq/hq_vNNN.png
+make all                          # every shot
+RENDERER=gmanraytracer make shot=preview    # gmanpathtracer by default
+FORMAT=exr make shot=preview      # png by default; needs that driver in gman
 ```
 
-That renders `still-life-hq.png` at 1920 by 1200 with 512 paths a subpixel, 2,048 a pixel, which
-smooths the grain on the floor and in the metal. Expect about 25 minutes on an Apple M3 Max. The
-picture above is that render, scaled to 1280 by 800.
+A render writes the textures and the cactus under `build/` and builds the gilded shader that
+finishes the gold ball first. It never overwrites an earlier version: `tools/render.sh` writes a
+frame RIB under `build/frames/` that names the output and reads the shot, and versions count across
+formats.
 
-Two lines at the top of `still-life.rib` set the quality, and `make hq` rewrites both into
-`build/still-life-hq.rib`:
+`preview` renders 640 by 400 with 64 paths through each of four subpixels, about 25 seconds on an
+Apple M3 Max. `hq` renders 1920 by 1200 with 512 paths a subpixel, 2,048 a pixel, which smooths the
+grain on the floor and in the metal; expect about 25 minutes. The picture above is an `hq` render
+scaled to 1280 by 800.
+
+Three lines at the top of a `shots/<shot>/shot.rib` set the quality:
 
 ```
 Format 640 400 1
+PixelSamples 2 2
 Option "pathtracer" "integer samples" [64]
 ```
 
 `Format` sets the size in pixels. `integer samples` sets the paths traced through each subpixel;
 `PixelSamples 2 2` makes four subpixels a pixel. Noise falls with the square root of the paths, so
-four times the samples halves the grain. `make hq` and `make check` take the same `GMAN_PREFIX` and
-`GMAN`; `make check` renders small test scenes and verifies the shader.
+four times the samples halves the grain. A new shot is a directory under `shots/` with a `shot.rib`
+that has no `Display`.
+
+## Check it
+
+```sh
+make check
+```
+
+builds the shader and the assets, runs the C++ unit test, and runs the `unittest` suites in
+`tests/`, which render small scenes to verify the shader under both renderers.
 
 ## What is in it
 
-| File | What it makes |
+| Path | Holds |
 |---|---|
-| `still-life.rib` | The scene: camera, lights, floor, wall and the four objects |
-| `gen/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard of cream and slate marble |
-| `gen/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball, and `build/foilnormal.tif`, its 16-bit normal map with sharp creases |
-| `gen/tiff16.py` | The 16-bit TIFF writer the generators share |
+| `assets/still-life/still-life.rib` | The scene's entry: every part with its look |
+| `assets/still-life/lookdev/<part>.rib` | One part's material and geometry: `floor`, `wall`, `pedestal`, `gold`, `glass`, `mirror`, `torus`, `pot` |
+| `lights/studio.rib` | A warm disk light overhead and a small blue lamp |
+| `shots/<shot>/shot.rib` | Camera, format, samples and what the shot reads: `preview` and `hq` |
+| `tools/render.sh` | Renders a shot into the next free version |
+| `tools/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard of cream and slate marble |
+| `tools/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball, and `build/foilnormal.tif`, its 16-bit normal map with sharp creases |
+| `tools/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, and `build/cactus.rib`, the cactus |
+| `tools/tiff16.py` | The 16-bit TIFF writer the generators share |
 | `shaders/gmangilded.cpp` | `libgilded.so`, the shader that turns the foil and its normal map into gold leaf |
-| `gen/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, and `build/cactus.rib`, the cactus |
+| `tests/` | `unittest` suites and a C++ unit test |
 | `images/still-life.png` | The picture above |
+| `build/`, `renders/` | Generated; not tracked |
+
+## Conventions
+
+- Axes are RenderMan camera space: x right, y up, z away from the camera, and the camera looks down
+  +z. Y is up in the scene.
+- The RIB files are the masters; every texture and the cactus are generated into `build/`.
+- The gold ball's `normalname` map follows `paintedplastic`'s convention: red along `dPdu`, green
+  along `-dPdv`, blue along the normal.
 
 ## Licence
 
-The code is under the [MIT licence](LICENSE): the scripts under `gen/`, the `Makefile` and any
-shader this repository builds. The scene, `still-life.rib`, and the pictures under `images/` are
-under [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0). gman itself is LGPL-2.1-or-later; a
-shader here links it as a plugin, and its own code stays MIT.
+The code is under the [MIT licence](LICENSE): the scripts under `tools/`, the tests, the `Makefile`
+and any shader this repository builds. The scene, under `assets/`, `lights/` and `shots/`, and the
+pictures under `images/` are under [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0). gman itself
+is LGPL-2.1-or-later; a shader here links it as a plugin, and its own code stays MIT.

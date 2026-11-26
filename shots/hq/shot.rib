@@ -1,0 +1,14 @@
+## Shot hq: 1920 by 1200 with 512 paths through each of four subpixels. Rendered through
+## tools/render.sh, which supplies Display; run from the project root.
+Format 1920 1200 1
+PixelSamples 2 2
+Option "pathtracer" "integer samples" [512]
+Projection "perspective" "fov" [28]
+Clipping 0.5 50
+Translate -0.02 0.3 5.6
+Rotate -11 1 0 0
+WorldBegin
+Sides 2
+ReadArchive "../../lights/studio.rib"
+ReadArchive "../../assets/still-life/still-life.rib"
+WorldEnd
