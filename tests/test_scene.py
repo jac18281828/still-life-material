@@ -56,5 +56,17 @@ class Scene(unittest.TestCase):
                 self.assertIn(name, MAKEFILE)
 
 
+    def test_floor_faces_up(self):
+        text = (LOOKDEV / "floor.rib").read_text()
+        match = re.search(r'Polygon "P" \[([^\]]+)\]', text)
+        self.assertIsNotNone(match)
+        values = [float(v) for v in match.group(1).split()]
+        a, b, c = (values[i : i + 3] for i in (0, 3, 6))
+        edge1 = [b[i] - a[i] for i in range(3)]
+        edge2 = [c[i] - b[i] for i in range(3)]
+        normal_y = edge1[2] * edge2[0] - edge1[0] * edge2[2]
+        self.assertGreater(normal_y, 0.0, "the normal map's frame assumes the floor's normal points up")
+
+
 if __name__ == "__main__":
     unittest.main()

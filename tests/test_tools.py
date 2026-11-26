@@ -12,6 +12,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 FOIL = ROOT / "tools" / "foil.py"
 CACTUS = ROOT / "tools" / "cactus.py"
+MARBLE = ROOT / "tools" / "marble.py"
 TOLERANCE = 0.02
 
 
@@ -83,6 +84,43 @@ class Cactus(unittest.TestCase):
         seam = np.abs(decoded[:, 0] - decoded[:, -1]).mean()
         inside = np.abs(decoded[:, 1:] - decoded[:, :-1]).mean()
         self.assertLess(seam, 1.5 * inside)
+
+
+class Marble(unittest.TestCase):
+    TILES = 20
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.tmp.cleanup)
+        cls.marble = Path(cls.tmp.name) / "marble.tif"
+        cls.normal = Path(cls.tmp.name) / "marblenormal.tif"
+        subprocess.run([sys.executable, "-I", str(MARBLE), str(cls.marble), str(cls.normal)], check=True)
+        cls.decoded = read_tiff16(cls.normal) * 2.0 - 1.0
+
+    def test_marble_is_2048_square(self):
+        with Image.open(self.marble) as image:
+            self.assertEqual(image.size, (2048, 2048))
+
+    def test_normal_map_holds_unit_normals_facing_out(self):
+        self.assertLess(np.abs(np.linalg.norm(self.decoded, axis=2) - 1.0).max(), TOLERANCE)
+        self.assertGreater(self.decoded[..., 2].min(), 0.0)
+
+    def test_grout_is_bevelled_and_tiles_sit_nearly_level(self):
+        size = self.decoded.shape[0]
+        tilt = np.linalg.norm(self.decoded[..., :2], axis=2)
+        along = (np.arange(size) / size * self.TILES) % 1.0
+        edge = np.minimum(along, 1.0 - along)
+        edge = np.minimum(edge[:, None], edge[None, :])
+        self.assertGreater(tilt[edge < 0.05].max(), 0.4, "the bevel is steep")
+        self.assertLess(tilt[edge > 0.1].max(), 0.1, "a tile's face is nearly level")
+
+    def test_every_tile_has_its_own_tilt(self):
+        size = self.decoded.shape[0]
+        step = size // self.TILES
+        centres = self.decoded[step // 2 :: step, step // 2 :: step, 0]
+        self.assertEqual(centres.shape, (self.TILES, self.TILES))
+        self.assertGreater(centres.std(), 0.005)
 
 
 if __name__ == "__main__":
