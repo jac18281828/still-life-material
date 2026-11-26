@@ -1,13 +1,16 @@
 # SPDX-License-Identifier: MIT
 # Marble floor: a 2048 by 2048 checkerboard of cream and slate marble with grout, and its 16-bit
 # tangent-space normal map of recessed, bevelled grout and tiles that each sit a hair off level.
-# Usage: marble.py <marble.tif> <normal.tif>
+# Usage: marble.py <marble.tif> <normal.tif> [scale]   scale multiplies both sides, up to 2
 import numpy as np, os, sys
 from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tiff16 import write_tiff16
 rng=np.random.default_rng(7)
-N=2048
+SCALE=int(sys.argv[3]) if len(sys.argv)>3 else 1
+if SCALE<1: sys.exit('scale must be a positive integer')
+NORMAL_SCALE=min(SCALE,2)
+N=2048*NORMAL_SCALE
 def vnoise(n, cells):
     g=rng.random((cells+1,cells+1))
     x=np.linspace(0,cells,n,endpoint=False); xi=x.astype(int); xf=x-xi
@@ -41,8 +44,9 @@ grout=((fx<gw)|(fx>1-gw)|(fy<gw)|(fy>1-gw))[...,None]
 img=np.where(grout,np.array([0.42,0.4,0.37]),img)
 Image.fromarray((np.clip(img,0,1)*255+0.5).astype(np.uint8)).save(sys.argv[1])
 
-NORMAL_N=4096
-GROUT_DEPTH=5
+del img,L,D,light,ln,dark,dn,chk,grout,ti,tj,fx,fy,yy,xx
+NORMAL_N=4096*NORMAL_SCALE
+GROUT_DEPTH=5*NORMAL_SCALE
 BEVEL=0.03
 TILE_TILT=0.05
 nrng=np.random.default_rng(31)
@@ -55,8 +59,11 @@ tile_px=NORMAL_N/tiles
 tilt=nrng.uniform(-TILE_TILT,TILE_TILT,(2,tiles,tiles))
 ni=(gx*tiles).astype(int); nj=(gy*tiles).astype(int)
 height=-GROUT_DEPTH*(1-shoulder)+(tilt[0][nj,ni]*(nfx-0.5)+tilt[1][nj,ni]*(nfy-0.5))*tile_px
+del gy,gx,nfx,nfy,edge,ramp,shoulder,ni,nj
 hx=(np.roll(height,-1,1)-np.roll(height,1,1))*0.5
 hy=(np.roll(height,-1,0)-np.roll(height,1,0))*0.5
+del height
 nx,ny,nz=-hx,hy,np.ones_like(hx)
+del hx,hy
 length=np.sqrt(nx*nx+ny*ny+nz*nz)
 write_tiff16(sys.argv[2],np.stack([nx,ny,nz],-1)/length[...,None]*0.5+0.5)

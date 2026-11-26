@@ -7,7 +7,11 @@ import numpy as np
 
 def write_tiff16(path, img):
     h,w,_=img.shape
-    data=(np.clip(img,0,1)*65535+0.5).astype('>u2').tobytes()
+    scaled=np.clip(img,0,1)
+    scaled*=65535
+    scaled+=0.5
+    data=scaled.astype('>u2').tobytes()
+    del scaled
     entries=[]
     def e(tag,typ,count,val): entries.append((tag,typ,count,val))
     off_bps=8; hdr=b'MM\x00\x2a'

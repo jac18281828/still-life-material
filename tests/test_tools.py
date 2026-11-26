@@ -53,6 +53,23 @@ class Foil(unittest.TestCase):
         self.assertGreater(decoded[..., :2].std(), 0.05)
 
 
+def relief(normal):
+    return (read_tiff16(normal) * 2.0 - 1.0)[..., :2].std()
+
+
+class Foil2x(unittest.TestCase):
+    def test_scale_2_doubles_the_sides_and_keeps_the_relief(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            foil, normal = Path(tmp) / "foil.tif", Path(tmp) / "normal.tif"
+            subprocess.run([sys.executable, "-I", str(FOIL), str(foil), str(normal), "2"], check=True)
+            with Image.open(foil) as image:
+                self.assertEqual(image.size, (4096, 2048))
+            self.assertEqual(read_tiff16(normal).shape, (2048, 4096, 3))
+            base = Path(tmp) / "base.tif"
+            subprocess.run([sys.executable, "-I", str(FOIL), str(Path(tmp) / "f1.tif"), str(base)], check=True)
+            self.assertAlmostEqual(relief(normal) / relief(base), 1.0, delta=0.2)
+
+
 class Cactus(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -86,6 +103,24 @@ class Cactus(unittest.TestCase):
         self.assertLess(seam, 1.5 * inside)
 
 
+class Cactus2x(unittest.TestCase):
+    def test_scale_2_doubles_the_sides_and_keeps_the_relief(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            names = {}
+            for scale in ("1", "2"):
+                skin, rib, normal = (Path(tmp) / f"{scale}{n}" for n in ("skin.tif", "cactus.rib", "normal.tif"))
+                subprocess.run(
+                    [sys.executable, "-I", str(CACTUS), str(skin), str(rib), "build/cactus.tif", str(normal), scale],
+                    check=True,
+                    capture_output=True,
+                )
+                names[scale] = (skin, normal)
+            with Image.open(names["2"][0]) as image:
+                self.assertEqual(image.size, (1024, 1024))
+            self.assertEqual(read_tiff16(names["2"][1]).shape, (2048, 2048, 3))
+            self.assertAlmostEqual(relief(names["2"][1]) / relief(names["1"][1]), 1.0, delta=0.2)
+
+
 class Marble(unittest.TestCase):
     TILES = 20
 
@@ -114,6 +149,15 @@ class Marble(unittest.TestCase):
         edge = np.minimum(edge[:, None], edge[None, :])
         self.assertGreater(tilt[edge < 0.05].max(), 0.4, "the bevel is steep")
         self.assertLess(tilt[edge > 0.1].max(), 0.1, "a tile's face is nearly level")
+
+    def test_scale_2_doubles_the_sides_and_keeps_the_relief(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            marble, normal = Path(tmp) / "marble.tif", Path(tmp) / "normal.tif"
+            subprocess.run([sys.executable, "-I", str(MARBLE), str(marble), str(normal), "2"], check=True)
+            with Image.open(marble) as image:
+                self.assertEqual(image.size, (4096, 4096))
+            self.assertEqual(read_tiff16(normal).shape, (8192, 8192, 3))
+            self.assertAlmostEqual(relief(normal) / relief(self.normal), 1.0, delta=0.2)
 
     def test_every_tile_has_its_own_tilt(self):
         size = self.decoded.shape[0]

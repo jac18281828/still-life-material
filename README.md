@@ -57,6 +57,19 @@ Option "pathtracer" "integer samples" [64]
 four times the samples halves the grain. A new shot is a directory under `shots/` with a `shot.rib`
 that has no `Display`.
 
+### Texture size
+
+The textures grow with the render. `make shot=<shot>` reads the shot's `Format` width and builds the
+textures at scale `ceil(width / 1920)`: 1 up to 1920 pixels wide, 2 up to 3840, 3 up to 5760, and
+so on. A scale multiplies the side of every texture, and the normal maps' strength follows so the
+relief keeps its height. `preview` and `hq` stay at scale 1, whose textures are byte-identical to
+the ones before this rule. `TEXSCALE=<n> make assets` sets the scale by hand. A change of scale
+discards the textures and builds them again, so `preview` after a wider shot rebuilds at scale 1.
+
+The marble stops at scale 2: its normal map is already 4096 by 4096 and 8192 by 8192 at scale 2,
+about 400 MB and 16 GB of memory to build. The foil, the cactus and the marble's colour grow
+without that limit.
+
 ## Check it
 
 ```sh
@@ -75,7 +88,7 @@ builds the shader and the assets, runs the C++ unit test, and runs the `unittest
 | `lights/studio.rib` | A warm disk light overhead and a small blue lamp |
 | `shots/<shot>/shot.rib` | Camera, format, samples and what the shot reads: `preview` and `hq` |
 | `tools/render.sh` | Renders a shot into the next free version |
-| `tools/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard of cream and slate marble, and `build/marblenormal.tif`, its normal map of recessed bevelled grout and tiles that each sit a hair off level |
+| `tools/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard (scale 1) of cream and slate marble, and `build/marblenormal.tif`, its normal map of recessed bevelled grout and tiles that each sit a hair off level |
 | `tools/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball, and `build/foilnormal.tif`, its 16-bit normal map with sharp creases |
 | `tools/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, `build/cactusnormal.tif`, its normal map of undulation and fine pebbling, and `build/cactus.rib`, the cactus |
 | `tools/tiff16.py` | The 16-bit TIFF writer the generators share |

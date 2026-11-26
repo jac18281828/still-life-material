@@ -1,13 +1,16 @@
 # SPDX-License-Identifier: MIT
 # Gold-leaf texture for the gilded shader: crinkled, mottled foil with sparse cracks to a red
 # bole, 2048 by 1024, s around the sphere and t pole to pole, and its 16-bit tangent-space normal
-# map: the same crinkle and cracks plus sharp creases, so the foil has edges. Usage: foil.py <foil.tif> <normal.tif>
+# map: the same crinkle and cracks plus sharp creases, so the foil has edges.
+# Usage: foil.py <foil.tif> <normal.tif> [scale]   scale multiplies both sides; the picture is the same, finer
 import numpy as np, os, sys
 from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tiff16 import write_tiff16
 rng=np.random.default_rng(5)
-W,H=2048,1024
+SCALE=int(sys.argv[3]) if len(sys.argv)>3 else 1
+if SCALE<1: sys.exit('scale must be a positive integer')
+W,H=2048*SCALE,1024*SCALE
 yy,xx=np.mgrid[0:H,0:W].astype(float)
 u=xx/W; v=yy/H*0.5
 P=1024
@@ -38,7 +41,7 @@ img=img*(1-k)+np.array([0.55,0.3,0.22])*k
 Image.fromarray((np.clip(img,0,1)*255+0.5).astype(np.uint8)).save(sys.argv[1])
 
 CREASE_WEIGHT=0.8
-NORMAL_STRENGTH=12
+NORMAL_STRENGTH=12*SCALE
 def crease(f):
     return sum(1-np.abs(2*rnoise(f,a,1.2)-1) for a in (0.4,1.3,2.2))/3
 creases=0.5*crease(38)+0.3*crease(90)+0.2*crease(210)
