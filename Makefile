@@ -19,7 +19,7 @@ GMAN_PATH := $(shell command -v $(GMAN))
 GMAN_PREFIX ?= $(abspath $(dir $(GMAN_PATH))..)
 SHOTS := $(notdir $(wildcard shots/*))
 
-ASSETS = build/marble.tif build/cactus.tif build/cactus.rib build/foil.tif build/foilnormal.tif
+ASSETS = build/marble.tif build/cactus.tif build/cactusnormal.tif build/cactus.rib build/foil.tif build/foilnormal.tif
 
 .PHONY: assets shader render all check clean
 render: assets shader
@@ -45,9 +45,10 @@ build/marble.tif: tools/marble.py
 
 build/cactus.rib: tools/cactus.py tools/tiff16.py
 	mkdir -p build
-	$(PYTHON) tools/cactus.py build/cactus.tif $@ build/cactus.tif
+	$(PYTHON) tools/cactus.py build/cactus.tif $@ build/cactus.tif build/cactusnormal.tif
 
-build/cactus.tif: build/cactus.rib
+build/cactus.tif build/cactusnormal.tif: build/cactus.rib
+	@test -f $@ || $(PYTHON) tools/cactus.py build/cactus.tif build/cactus.rib build/cactus.tif build/cactusnormal.tif
 
 all: assets shader
 	@for s in $(SHOTS); do GMAN=$(GMAN) tools/render.sh $$s $(RENDERER) $(FORMAT) || exit 1; done

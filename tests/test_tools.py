@@ -11,6 +11,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 FOIL = ROOT / "tools" / "foil.py"
+CACTUS = ROOT / "tools" / "cactus.py"
 TOLERANCE = 0.02
 
 
@@ -49,6 +50,39 @@ class Foil(unittest.TestCase):
     def test_normal_map_has_relief(self):
         decoded = read_tiff16(self.normal) * 2.0 - 1.0
         self.assertGreater(decoded[..., :2].std(), 0.05)
+
+
+class Cactus(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.tmp.cleanup)
+        cls.skin = Path(cls.tmp.name) / "cactus.tif"
+        cls.rib = Path(cls.tmp.name) / "cactus.rib"
+        cls.normal = Path(cls.tmp.name) / "cactusnormal.tif"
+        subprocess.run(
+            [sys.executable, "-I", str(CACTUS), str(cls.skin), str(cls.rib), "build/cactus.tif", str(cls.normal)],
+            check=True,
+            capture_output=True,
+        )
+
+    def test_pads_name_the_normal_map(self):
+        pads = [line for line in self.rib.read_text().splitlines() if "paintedplastic" in line]
+        self.assertEqual(len(pads), 4)
+        for line in pads:
+            self.assertIn(f'"string normalname" ["{self.normal}"]', line)
+
+    def test_normal_map_holds_unit_normals_facing_out(self):
+        decoded = read_tiff16(self.normal) * 2.0 - 1.0
+        self.assertLess(np.abs(np.linalg.norm(decoded, axis=2) - 1.0).max(), TOLERANCE)
+        self.assertGreater(decoded[..., 2].min(), 0.0)
+        self.assertGreater(decoded[..., :2].std(), 0.02)
+
+    def test_normal_map_wraps_around_the_pad(self):
+        decoded = read_tiff16(self.normal) * 2.0 - 1.0
+        seam = np.abs(decoded[:, 0] - decoded[:, -1]).mean()
+        inside = np.abs(decoded[:, 1:] - decoded[:, :-1]).mean()
+        self.assertLess(seam, 1.5 * inside)
 
 
 if __name__ == "__main__":

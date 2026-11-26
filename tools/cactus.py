@@ -1,13 +1,14 @@
 import numpy as np, os, struct, sys, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tiff16 import write_tiff16
-out_tif, out_rib, tex_name = sys.argv[1], sys.argv[2], sys.argv[3]
+out_tif, out_rib, tex_name, out_normal = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 AR=0.0055*0.75
 rng=np.random.default_rng(11)
 # ---- pad skin ----
 N=512
-def vnoise(n, cx, cy):
-    g=rng.random((cy+1,cx+1))
+def vnoise(n, cx, cy, source=rng, wrap=False):
+    g=source.random((cy+1,cx+1))
+    if wrap: g[:,cx]=g[:,0]
     y=np.linspace(0,cy,n,endpoint=False); x=np.linspace(0,cx,n,endpoint=False)
     yi=y.astype(int); xi=x.astype(int); yf=y-yi; xf=x-xi
     yf=yf*yf*(3-2*yf); xf=xf*xf*(3-2*xf)
@@ -28,6 +29,17 @@ col*= (0.93+0.12*streak)[...,None]
 rim=np.clip(1-face*1.6,0,1)*0.0+np.clip(0.25-pole,0,1)*2.2
 col=col*(1-0.35*rim[...,None])+np.array([0.5,0.45,0.25])*0.35*rim[...,None]
 write_tiff16(out_tif, col*0.86)
+# ---- pad skin normal map: gentle undulation and fine pebbling, tangent space, s wrapping around the pad ----
+NORMAL_N=1024
+NORMAL_STRENGTH=6
+nrng=np.random.default_rng(23)
+def relief(n, cx, cy): return vnoise(n, cx, cy, nrng, True)
+height=0.45*relief(NORMAL_N,8,4)+0.3*relief(NORMAL_N,32,16)+0.15*relief(NORMAL_N,96,48)+0.1*relief(NORMAL_N,240,120)
+hx=(np.roll(height,-1,1)-np.roll(height,1,1))*0.5
+hy=(np.roll(height,-1,0)-np.roll(height,1,0))*0.5
+nx,ny,nz=-hx*NORMAL_STRENGTH*NORMAL_N/N,hy*NORMAL_STRENGTH*NORMAL_N/N,np.ones_like(hx)
+length=np.sqrt(nx*nx+ny*ny+nz*nz)
+write_tiff16(out_normal, np.stack([nx,ny,nz],-1)/length[...,None]*0.5+0.5)
 # ---- pads, areoles, spines ----
 pads=[((0,0.44,0),(15,0),(0.12,0.16,0.04)),
       ((-0.08,0.71,0.01),(15,28),(0.1,0.13,0.035)),
@@ -41,7 +53,7 @@ for (t,(ry,rz),(a,b,c)) in pads:
     w('\tTranslate %g %g %g'%t); w('\tRotate %g 0 1 0'%ry)
     if rz: w('\tRotate %g 0 0 1'%rz)
     w('\tAttributeBegin')
-    w('\t\tSurface "paintedplastic" "Kd" [0.85] "Ks" [0.18] "roughness" [0.22] "texturename" ["%s"]' % tex_name)
+    w('\t\tSurface "paintedplastic" "Kd" [0.85] "Ks" [0.18] "roughness" [0.22] "texturename" ["%s"] "string normalname" ["%s"]' % (tex_name, out_normal))
     w('\t\tColor [1 1 1]')
     w('\t\tScale %g %g %g'%(a,b,c)); w('\t\tRotate -90 1 0 0'); w('\t\tSphere 1 -1 1 360')
     w('\tAttributeEnd')

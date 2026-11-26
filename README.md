@@ -77,7 +77,7 @@ builds the shader and the assets, runs the C++ unit test, and runs the `unittest
 | `tools/render.sh` | Renders a shot into the next free version |
 | `tools/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard of cream and slate marble |
 | `tools/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball, and `build/foilnormal.tif`, its 16-bit normal map with sharp creases |
-| `tools/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, and `build/cactus.rib`, the cactus |
+| `tools/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, `build/cactusnormal.tif`, its normal map of undulation and fine pebbling, and `build/cactus.rib`, the cactus |
 | `tools/tiff16.py` | The 16-bit TIFF writer the generators share |
 | `shaders/gmangilded.cpp` | `libgilded.so`, the shader that turns the foil and its normal map into gold leaf |
 | `tests/` | `unittest` suites and a C++ unit test |
@@ -89,8 +89,8 @@ builds the shader and the assets, runs the C++ unit test, and runs the `unittest
 - Axes are RenderMan camera space: x right, y up, z away from the camera, and the camera looks down
   +z. Y is up in the scene.
 - The RIB files are the masters; every texture and the cactus are generated into `build/`.
-- The gold ball's `normalname` map follows `paintedplastic`'s convention: red along `dPdu`, green
-  along `-dPdv`, blue along the normal.
+- The normal maps, the gold ball's and the cactus pads', follow `paintedplastic`'s convention: red
+  along `dPdu`, green along `-dPdv`, blue along the normal.
 
 ## Licence
 
