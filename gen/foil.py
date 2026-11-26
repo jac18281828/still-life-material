@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Gold-leaf texture for the gilded shader: crinkled, mottled foil with sparse cracks to a red
-# bole, 2048 by 1024, s around the sphere and t pole to pole. Usage: foil.py <out.tif>
+# bole, 2048 by 1024, s around the sphere and t pole to pole, and its 16-bit tangent-space normal
+# map: the same crinkle and cracks plus sharp creases, so the foil has edges. Usage: foil.py <foil.tif> <normal.tif>
 import numpy as np, sys
 from PIL import Image
+from tiff16 import write_tiff16
 rng=np.random.default_rng(5)
 W,H=2048,1024
 yy,xx=np.mgrid[0:H,0:W].astype(float)
@@ -33,3 +35,15 @@ img=np.stack([lum,lum*0.985,lum*0.96],-1)
 k=np.clip(crack*0.7,0,1)[...,None]
 img=img*(1-k)+np.array([0.55,0.3,0.22])*k
 Image.fromarray((np.clip(img,0,1)*255+0.5).astype(np.uint8)).save(sys.argv[1])
+
+CREASE_WEIGHT=0.8
+NORMAL_STRENGTH=12
+def crease(f):
+    return sum(1-np.abs(2*rnoise(f,a,1.2)-1) for a in (0.4,1.3,2.2))/3
+creases=0.5*crease(38)+0.3*crease(90)+0.2*crease(210)
+height=lum-0.5*np.clip(crack*0.7,0,1)+CREASE_WEIGHT*creases
+hx=(np.roll(height,-1,1)-np.roll(height,1,1))*0.5
+hy=(np.roll(height,-1,0)-np.roll(height,1,0))*0.5
+nx,ny,nz=-hx*NORMAL_STRENGTH,hy*NORMAL_STRENGTH,np.ones_like(hx)
+length=np.sqrt(nx*nx+ny*ny+nz*nz)
+write_tiff16(sys.argv[2],np.stack([nx,ny,nz],-1)/length[...,None]*0.5+0.5)

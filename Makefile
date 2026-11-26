@@ -7,31 +7,34 @@ SHADER_DIR = $(CURDIR)/build/cmake
 GMAN_RENDER = DYLD_LIBRARY_PATH=$(SHADER_DIR) LD_LIBRARY_PATH=$(SHADER_DIR) $(GMAN)
 PREFIX_ARG = $(if $(GMAN_PREFIX),-DCMAKE_PREFIX_PATH=$(GMAN_PREFIX))
 
-ASSETS = build/marble.tif build/cactus.tif build/cactus.rib build/foil.tif
+ASSETS = build/marble.tif build/cactus.tif build/cactus.rib build/foil.tif build/foilnormal.tif
 
 .PHONY: assets foil shader check preview hq
 
 assets: $(ASSETS)
 
-foil: build/foil.tif
+foil: build/foil.tif build/foilnormal.tif
 
 shader:
 	$(CMAKE) -S . -B build/cmake $(PREFIX_ARG)
 	$(CMAKE) --build build/cmake --parallel
 
-build/foil.tif: gen/foil.py
+build/foil.tif: gen/foil.py gen/tiff16.py
 	mkdir -p build
-	$(PYTHON) gen/foil.py $@
+	$(PYTHON) gen/foil.py $@ build/foilnormal.tif
+
+build/foilnormal.tif: build/foil.tif
+	@test -f $@ || $(PYTHON) gen/foil.py build/foil.tif $@
 
 check: shader foil
 	ctest --test-dir build/cmake --output-on-failure
-	$(PYTHON) tests/gildedcheck.py --gman '$(GMAN)' --shader-dir '$(SHADER_DIR)' --foil build/foil.tif
+	$(PYTHON) tests/gildedcheck.py --gman '$(GMAN)' --shader-dir '$(SHADER_DIR)' --foil build/foil.tif --normal build/foilnormal.tif
 
 build/marble.tif: gen/marble.py
 	mkdir -p build
 	$(PYTHON) gen/marble.py $@
 
-build/cactus.rib: gen/cactus.py
+build/cactus.rib: gen/cactus.py gen/tiff16.py
 	mkdir -p build
 	$(PYTHON) gen/cactus.py build/cactus.tif $@ build/cactus.tif
 

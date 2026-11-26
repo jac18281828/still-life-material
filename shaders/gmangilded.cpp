@@ -11,7 +11,7 @@
 #include "gildednormal.h"
 
 /*
- * surface gilded(float Ka=1, Ks=1, roughness=.1, bump=0; string texturename="")
+ * surface gilded(float Ka=1, Ks=1, roughness=.1, bump=0, normalgreendown=0; string texturename="", normalname="")
  *
  * Gold leaf: shinymetal's Cs-tinted specular metal with a surface texture.
  *
@@ -22,7 +22,11 @@
  *                Rec. 709 luminance, so darker texels are rougher.
  *   bump         how far the luminance gradient bends the shading normal along the surface tangents dPdu and dPdv;
  *                0 leaves the normal alone. Declare it, or pass it inline as "float bump" [6].
- *   Ka, Ks       ambient and specular weights, as in shinymetal.
+ *   normalname   a tangent-space normal map read at (s, t): each channel c in [0, 1] decodes to 2c - 1 along the
+ * tangent dPdu, the bitangent and N, as in paintedplastic. It gives the foil edges the colour texture cannot, and wins
+ * over bump. Declare it, or pass it inline as "string normalname" ["build/foilnormal.tif"]. normalgreendown  nonzero
+ * reads a DirectX map, green along +dPdv; zero, the default, an OpenGL map, along -dPdv. Ka, Ks       ambient and
+ * specular weights, as in shinymetal.
  *
  * The path tracer samples one GGX lobe of Ks * Cs * texture; the ray tracer shades the same colour, roughness and
  * bent normal with specular(). The normal stays unbent where a tangent is zero, as at a sphere's poles.
@@ -45,7 +49,9 @@ public:
       : ka(getFloatParam(parameters, RI_KA, 1.0f)), ks(getFloatParam(parameters, RI_KS, 1.0f)),
         roughness(getFloatParam(parameters, RI_ROUGHNESS, 0.1f)),
         texturename(getStringParam(parameters, RI_TEXTURENAME, std::string())),
-        bump(getFloatParam(parameters, "bump", 0.0f)) {}
+        bump(getFloatParam(parameters, "bump", 0.0f)),
+        normalname(getStringParam(parameters, "normalname", std::string())),
+        normalgreendown(getFloatParam(parameters, "normalgreendown", 0.0f) != 0.0f) {}
 
   GMANColor computeCi(GMANSurfaceEnv const& se) const override;
   GMANColor computeOi(GMANSurfaceEnv const& se) const override;
@@ -55,6 +61,7 @@ private:
   GMANColor tint(GMANSurfaceEnv const& se) const;
   RtFloat texturedRoughness(GMANColor const& tinted) const;
   GMANVector shadingNormal(GMANSurfaceEnv const& se) const;
+  GMANVector mappedShadingNormal(GMANSurfaceEnv const& se) const;
   double luminanceAt(GMANSurfaceEnv const& se, RtFloat s, RtFloat t) const;
 
   RtFloat const ka;
@@ -62,6 +69,8 @@ private:
   RtFloat const roughness;
   std::string const texturename;
   RtFloat const bump;
+  std::string const normalname;
+  bool const normalgreendown;
 };
 
 GMANColor gilded::tint(GMANSurfaceEnv const& se) const {
@@ -77,7 +86,17 @@ double gilded::luminanceAt(GMANSurfaceEnv const& se, RtFloat s, RtFloat t) const
   return luminance(se.texture(texturename, s, t));
 }
 
+GMANVector gilded::mappedShadingNormal(GMANSurfaceEnv const& se) const {
+  GMANColor const texel = se.texture(normalname, se.s, se.t);
+  GMANVector const bent =
+      mappedNormal(se.N, se.dPdu, se.dPdv, texel.getRed(), texel.getGreen(), texel.getBlue(), normalgreendown);
+  return gman::ensureValidReflection(se.Ng, -se.I, bent);
+}
+
 GMANVector gilded::shadingNormal(GMANSurfaceEnv const& se) const {
+  if (!normalname.empty()) {
+    return mappedShadingNormal(se);
+  }
   if (texturename.empty() || bump == 0.0f) {
     return se.N;
   }

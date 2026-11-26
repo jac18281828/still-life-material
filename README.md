@@ -62,8 +62,9 @@ four times the samples halves the grain. `make hq` and `make check` take the sam
 |---|---|
 | `still-life.rib` | The scene: camera, lights, floor, wall and the four objects |
 | `gen/marble.py` | `build/marble.tif`, a 2048 by 2048 checkerboard of cream and slate marble |
-| `gen/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball |
-| `shaders/gmangilded.cpp` | `libgilded.so`, the shader that turns the foil into gold leaf |
+| `gen/foil.py` | `build/foil.tif`, the crinkled gold-leaf texture of the gold ball, and `build/foilnormal.tif`, its 16-bit normal map with sharp creases |
+| `gen/tiff16.py` | The 16-bit TIFF writer the generators share |
+| `shaders/gmangilded.cpp` | `libgilded.so`, the shader that turns the foil and its normal map into gold leaf |
 | `gen/cactus.py` | `build/cactus.tif`, the 16-bit cactus skin, and `build/cactus.rib`, the cactus |
 | `images/still-life.png` | The picture above |
 

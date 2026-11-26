@@ -74,4 +74,37 @@ inline GMANVector bentNormal(GMANVector const& n, GMANVector const& dPdu, GMANVe
   return narrow(unit(difference(normal, scaled(gradient, bump))));
 }
 
+// The unit shading normal of a tangent-space normal-map texel (red, green, blue), each in [0, 1] and decoded to
+// 2c - 1 along the tangent, the bitangent and `n`. The tangent is dPdu projected onto the plane of the unit `n`; the
+// bitangent is dPdv made perpendicular to `n` and the tangent. Green runs along -dPdv, or along +dPdv when `greenDown`
+// reads a DirectX map. The normal stays unbent, and unit length, when either tangent degenerates to under 1e-6 or the
+// decoded vector is zero; a zero `n` is returned as is. Arithmetic runs in double, so any finite RtFloat inputs give
+// a finite result.
+inline GMANVector mappedNormal(GMANVector const& n, GMANVector const& dPdu, GMANVector const& dPdv, RtFloat red,
+                               RtFloat green, RtFloat blue, bool greenDown) {
+  using namespace gildedframe;
+  Vec3 const raw = widen(n);
+  if (!(length(raw) > 0.0)) {
+    return n;
+  }
+  Vec3 const normal = unit(raw);
+  Vec3 tangent{};
+  Vec3 bitangent{};
+  if (!tangentInPlane(widen(dPdu), normal, tangent)) {
+    return narrow(normal);
+  }
+  Vec3 const flattened = difference(widen(dPdv), scaled(normal, dot(widen(dPdv), normal)));
+  if (!tangentInPlane(flattened, tangent, bitangent)) {
+    return narrow(normal);
+  }
+  double const alongGreen = 2.0 * static_cast<double>(green) - 1.0;
+  Vec3 const bent = sum(sum(scaled(tangent, 2.0 * static_cast<double>(red) - 1.0),
+                            scaled(bitangent, greenDown ? alongGreen : -alongGreen)),
+                        scaled(normal, 2.0 * static_cast<double>(blue) - 1.0));
+  if (!(length(bent) > 0.0)) {
+    return narrow(normal);
+  }
+  return narrow(unit(bent));
+}
+
 } // namespace gmanshader

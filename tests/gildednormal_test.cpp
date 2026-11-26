@@ -122,6 +122,72 @@ void everyFiniteInputGivesFiniteOutput() {
   check(notFinite == 0, "every finite input gives a finite normal");
 }
 
+void flatTexelLeavesNormalUnbent() {
+  using gmanshader::mappedNormal;
+  check(near(mappedNormal(kNormal, kDPdu, kDPdv, 0.5f, 0.5f, 1.0f, false), kNormal), "a flat texel returns the normal");
+  GMANVector const scaledNormal(0, 0, 4);
+  check(near(mappedNormal(scaledNormal, kDPdu, kDPdv, 0.5f, 0.5f, 1.0f, false), kNormal),
+        "a flat texel returns a unit normal");
+}
+
+void texelBendsAlongTheFrame() {
+  using gmanshader::mappedNormal;
+  GMANVector const right = mappedNormal(kNormal, kDPdu, kDPdv, 1.0f, 0.5f, 0.5f, false);
+  check(near(right, GMANVector(1, 0, 0)), "full red bends along dPdu");
+  GMANVector const openGl = mappedNormal(kNormal, kDPdu, kDPdv, 0.5f, 1.0f, 0.5f, false);
+  check(near(openGl, GMANVector(0, -1, 0)), "an OpenGL map's green runs along -dPdv");
+  GMANVector const directX = mappedNormal(kNormal, kDPdu, kDPdv, 0.5f, 1.0f, 0.5f, true);
+  check(near(directX, GMANVector(0, 1, 0)), "a DirectX map's green runs along +dPdv");
+  GMANVector const skewed =
+      mappedNormal(kNormal, GMANVector(1, 0, 0.5f), GMANVector(0.3f, 1, 0.2f), 0.9f, 0.7f, 0.8f, true);
+  check(std::fabs(lengthOf(skewed) - 1.0) < 1e-6, "a skewed frame gives a unit normal");
+}
+
+void degenerateFrameLeavesNormalUnbent() {
+  using gmanshader::mappedNormal;
+  GMANVector const zero(0, 0, 0);
+  GMANVector const alongNormal(0, 0, 2);
+  check(near(mappedNormal(kNormal, zero, kDPdv, 1.0f, 1.0f, 0.5f, false), kNormal), "a zero dPdu leaves it unbent");
+  check(near(mappedNormal(kNormal, kDPdu, zero, 1.0f, 1.0f, 0.5f, false), kNormal), "a zero dPdv leaves it unbent");
+  check(near(mappedNormal(kNormal, kDPdu, kDPdu, 1.0f, 1.0f, 0.5f, false), kNormal),
+        "a dPdv parallel to dPdu leaves it unbent");
+  check(near(mappedNormal(kNormal, alongNormal, kDPdv, 1.0f, 1.0f, 0.5f, false), kNormal),
+        "a dPdu along the normal leaves it unbent");
+  check(near(mappedNormal(kNormal, kDPdu, kDPdv, 0.5f, 0.5f, 0.5f, false), kNormal),
+        "a zero decoded vector leaves it unbent");
+  check(near(mappedNormal(zero, kDPdu, kDPdv, 1.0f, 1.0f, 1.0f, false), zero), "a zero normal comes back as is");
+}
+
+void everyFiniteTexelGivesFiniteNormal() {
+  using gmanshader::mappedNormal;
+  std::mt19937_64 rng(20261125);
+  std::uniform_real_distribution<double> exponent(-30.0, 18.0);
+  std::uniform_int_distribution<int> pick(0, 5);
+  auto component = [&]() -> RtFloat {
+    switch (pick(rng)) {
+    case 0:
+      return 0.0f;
+    case 1:
+      return 1e-30f;
+    case 2:
+      return -1e18f;
+    default:
+      return static_cast<RtFloat>((pick(rng) % 2 == 0 ? 1.0 : -1.0) * std::pow(10.0, exponent(rng)));
+    }
+  };
+  int notFinite = 0;
+  for (int i = 0; i < 200000; ++i) {
+    GMANVector const n(component(), component(), component());
+    GMANVector const du(component(), component(), component());
+    GMANVector const dv(component(), component(), component());
+    GMANVector const bent = mappedNormal(n, du, dv, component(), component(), component(), i % 2 == 0);
+    if (!finite(bent)) {
+      ++notFinite;
+    }
+  }
+  check(notFinite == 0, "every finite input gives a finite mapped normal");
+}
+
 } // namespace
 
 int main() {
@@ -130,6 +196,10 @@ int main() {
   parallelTangentLeavesNormalUnbent();
   positiveGradientTiltsAwayFromTangent();
   everyFiniteInputGivesFiniteOutput();
+  flatTexelLeavesNormalUnbent();
+  texelBendsAlongTheFrame();
+  degenerateFrameLeavesNormalUnbent();
+  everyFiniteTexelGivesFiniteNormal();
   if (failures != 0) {
     std::fprintf(stderr, "%d check(s) failed\n", failures);
     return EXIT_FAILURE;

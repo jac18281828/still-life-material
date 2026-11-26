@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Renders tests/rib/*.rib under the path tracer and the ray tracer and compares the images the
-# gilded shader makes. Usage: gildedcheck.py --gman <gman> --shader-dir <dir> --foil <foil.tif>
+# gilded shader makes. Usage: gildedcheck.py --gman <gman> --shader-dir <dir> --foil <foil.tif> --normal <foilnormal.tif>
 # Run from the repository root; every image lands under build/check/. Exits nonzero on a failed check.
 import argparse
 import os
@@ -57,13 +57,15 @@ def main():
     parser.add_argument("--gman", required=True)
     parser.add_argument("--shader-dir", required=True)
     parser.add_argument("--foil", required=True)
+    parser.add_argument("--normal", required=True)
     args = parser.parse_args()
-    if not Path(args.foil).exists():
-        sys.exit(f"missing {args.foil}")
+    for texture in (args.foil, args.normal):
+        if not Path(texture).exists():
+            sys.exit(f"missing {texture}")
     OUT.mkdir(parents=True, exist_ok=True)
 
     images = {}
-    for scene in ("shinymetal", "gildedplain", "gildedbump0", "gildedbump6", "gildedpole"):
+    for scene in ("shinymetal", "gildedplain", "gildedbump0", "gildedbump6", "gildednormal", "gildedpole"):
         for renderer in RENDERERS:
             pixels = render(args.gman, args.shader_dir, scene, renderer)
             if pixels is not None and lit(scene, renderer, pixels):
@@ -84,6 +86,14 @@ def main():
             print(f"bump {renderer}: {count} differing pixels of {int(sphere.sum())} sphere pixels")
             if count < BUMP_FRACTION * sphere.sum():
                 fail(f"the foil bump changes {count} of {int(sphere.sum())} sphere pixels under {renderer}")
+
+        mapped = images.get(("gildednormal", renderer))
+        if flat is not None and mapped is not None:
+            sphere = sphere_mask(flat) | sphere_mask(mapped)
+            count = int((differing(flat, mapped) & sphere).sum())
+            print(f"normal map {renderer}: {count} differing pixels of {int(sphere.sum())} sphere pixels")
+            if count < BUMP_FRACTION * sphere.sum():
+                fail(f"the foil normal map changes {count} of {int(sphere.sum())} sphere pixels under {renderer}")
 
         if ("gildedpole", renderer) in images:
             print(f"pole {renderer}: rendered, {int(sphere_mask(images['gildedpole', renderer]).sum())} sphere pixels")
