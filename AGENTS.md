@@ -13,10 +13,10 @@ and how to render.
 - **Agenda:** `~/OneDrive/Documents/org/gman.org`, under `* gman — shading, lights and radiosity`.
   The orchestrator owns it; an executor edits no agenda.
 - **Machine:** the owner's workstation, where gman and a CPU for path-traced renders live.
-- **gman:** `gman` on `PATH`, release 1.3.1 or later; `GMAN=<path>` overrides it. The Makefile takes
+- **gman:** `gman` on `PATH`, release 1.4.0 or later; `GMAN=<path>` overrides it. The Makefile takes
   the install prefix from the binary's location, as `GMAN_PREFIX=<prefix>` overrides, and finds
-  gman's headers and `find_package(gman CONFIG REQUIRED)` there. `tools/render.sh` refuses an older
-  gman. `FORMAT=exr` needs a gman whose `--version` lists the `exr` driver. A unit that needs
+  gman's headers and `find_package(gman CONFIG REQUIRED)` there. `FORMAT=exr` needs a gman whose
+  `--version` lists the `exr` driver. A unit that needs
   features newer than the latest release installs gman's `main` into a prefix of its own and names
   the commit it built.
 - **Python:** `python3` with `numpy` and `Pillow`, always run with `-I`; no other dependency.

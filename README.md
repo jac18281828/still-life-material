@@ -14,7 +14,7 @@ white tuft of glochids and a straw spine or two, and three pink buds.
 
 ## What you need
 
-- **gman 1.3.1 or later**, installed with its headers and on your `PATH`: the
+- **gman 1.4.0 or later**, installed with its headers and on your `PATH`: the
   [release archive](https://github.com/jac18281828/gman/releases) installs it. The Makefile takes
   the install prefix from the `gman` it finds, so nothing else needs configuring. A different
   gman is `GMAN=/path/to/gman`, and a different prefix is `GMAN_PREFIX=/prefix`.
